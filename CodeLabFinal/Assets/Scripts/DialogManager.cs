@@ -6,14 +6,14 @@ using UnityEngine.SceneManagement;
 
 public class DialogManager : MonoBehaviour
 {
-    public Button transitionButton; // 在 Inspector 里拖入你的“跳转/下一步”按钮
-    public TextMeshProUGUI transitionButtonText; // 按钮上的文字
-    // 用于显示背景图片的 UI Image 组件
+    public Button transitionButton; 
+    public TextMeshProUGUI transitionButtonText; 
+    // background img
     public Image backgroundDisplay;
 
     [Header("Dialogue UI")]
-    public GameObject dialoguePanel;      // 对话框的父物体（用于显示/隐藏）
-    public TextMeshProUGUI dialogueText;  // 显示对话内容的组件
+    public GameObject dialoguePanel;      // dialog Panel that controls if it is hided or not
+    public TextMeshProUGUI dialogueText;  
 
     public Location startingLocation;
     public Location currentLocation;
@@ -60,7 +60,7 @@ public class DialogManager : MonoBehaviour
         
     }
 
-    // --- 新增：给跳转按钮绑定的函数 ---
+    // load the target scene through button
     public void LoadTargetScene()
     {
         if (currentLocation != null && !string.IsNullOrEmpty(currentLocation.sceneToLoad))

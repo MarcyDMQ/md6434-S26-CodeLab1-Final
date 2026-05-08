@@ -2,23 +2,23 @@ using UnityEngine;
 
 public class CameraFollow : MonoBehaviour
 {
-    public Transform target;      // 要跟随的小球
-    public Vector3 offset = new Vector3(0, 7, -7); // 相机相对于球的偏移量
-    public float smoothTime = 0.3f; // 跟随的平滑时间
+    public Transform target;      // the ball that the camera follows
+    public Vector3 offset = new Vector3(0, 7, -7); // camera offset
+    public float smoothTime = 0.3f; 
     
     private Vector3 currentVelocity = Vector3.zero;
 
-    void LateUpdate() // LateUpdate 确保在球移动后更新相机位置
+    void LateUpdate() // update camera position after ball moves
     {
         if (target != null)
         {
-            // 计算目标相机位置
+            // calculate camera position
             Vector3 targetPosition = target.position + offset;
             
-            // 使用 SmoothDamp 实现丝滑跟随
+            // use SmoothDamp to make smooth following
             transform.position = Vector3.SmoothDamp(transform.position, targetPosition, ref currentVelocity, smoothTime);
             
-            // 始终盯着球看
+            // look at the ball at all times
             transform.LookAt(target.position);
         }
     }

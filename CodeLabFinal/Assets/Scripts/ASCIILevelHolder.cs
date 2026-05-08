@@ -11,7 +11,7 @@ public class ASCIILevelLoader : MonoBehaviour
     public GameObject speed;
     public GameObject minus;
     
-    // 在 Inspector 里，这个值应该改为类似 "Levels/Level<num>.txt"
+    // put"Levels/Level<num>.txt"in inspector
     public string fileLocation; 
     private int currentLevel = 0;
     GameObject loadedLevel;
@@ -27,7 +27,7 @@ public class ASCIILevelLoader : MonoBehaviour
 
     public static ASCIILevelLoader instance;
         
-    void Awake() // 建议在 Awake 初始化单例
+    void Awake() 
     {
         if (instance == null)
         {
@@ -50,24 +50,15 @@ public class ASCIILevelLoader : MonoBehaviour
         if (loadedLevel != null) Destroy(loadedLevel);
         loadedLevel = new GameObject("Level" + currentLevel);
         
-        // --- 核心路径修改 ---
-        // 1. 处理占位符
+        // change the filePath
         string relativePath = fileLocation.Replace("<num>", currentLevel.ToString());
         
-        // 2. 结合 StreamingAssets 路径
-        // 这样打包后，它会自动指向 "你的游戏_Data/StreamingAssets/..."
+        // read the txt file in streamingAssets
         string fullPath = Path.Combine(Application.streamingAssetsPath, relativePath);
-        
-        // 检查文件是否存在，防止打包后崩溃
-        if (!File.Exists(fullPath))
-        {
-            Debug.LogError("找不到关卡文件: " + fullPath);
-            return;
-        }
 
         string[] lines = File.ReadAllLines(fullPath);
 
-        // --- 以下生成逻辑保持不变 ---
+        // generate objects
         GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         Vector3 centerPos = playerObj != null ? playerObj.transform.position : Vector3.zero;
         
@@ -113,7 +104,7 @@ public class ASCIILevelLoader : MonoBehaviour
                 }
 
                 if (newObject != null)
-                {
+                {//generate objects considering the player in the center
                     float spawnX = Mathf.Round(centerPos.x) + (x - fileCols / 2);
                     float spawnZ = Mathf.Round(centerPos.z) - (y - fileRows / 2);
 

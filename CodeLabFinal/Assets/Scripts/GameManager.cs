@@ -5,7 +5,6 @@ using UnityEngine.SceneManagement;
 using System.Collections.Generic; // for score list
 using System.Linq; // for ranking scores
 
-// 新增：单条排行榜数据格式
 [System.Serializable]
 public class ScoreEntry
 {
@@ -13,7 +12,7 @@ public class ScoreEntry
     public int score;
 }
 
-// 修改：这个类现在配合 JSON 读写对象列表数据
+// using Json to read and load data
 [System.Serializable]
 public class LeaderboardData
 {
@@ -31,21 +30,22 @@ public class GameManager : MonoBehaviour
     public TMP_Text leaderboardText; 
 
     // inputName
-    public TMP_InputField nameInputField; // 拖入你的输入框
-    public GameObject nameInputPanel;     // 拖入包含输入框和按钮的面板
+    public TMP_InputField nameInputField;
+    public GameObject nameInputPanel;     
     public GameObject GameOverPanel;
-    private string currentPlayerName = "Player"; // 默认名字
-    private bool gameStarted = false;     // 控制游戏逻辑是否真正开始
+    private string currentPlayerName = "Player"; // default player name
+    // a bool that controls whether game has started, because players need time to enter their name
+    private bool gameStarted = false;     
     
     int score = 0;
     public float maxTime = 60;
     private bool gameOver = false;
-    private bool isTransitioning = false; // 状态锁，防止重复触发
+    private bool isTransitioning = false; //a bool that avoid multiple trigger of shrinking process
 
     const string DIR_DATA = "/Data/";
     const string FILE_HIGHSCORE = DIR_DATA + "highScore.txt";
     
-    // 新增：排行榜 JSON 文件路径
+    // Json path for leaderboard
     const string FILE_LEADERBOARD = DIR_DATA + "leaderboard.json";
     
     // static instance
@@ -69,7 +69,7 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         if (GameOverPanel != null) GameOverPanel.SetActive(false);
-        // 游戏开始时显示名字输入面板并暂停时间
+        // pause time before player confirm name
         if (nameInputPanel != null) nameInputPanel.SetActive(true);
         Time.timeScale = 0; 
 
@@ -85,13 +85,13 @@ public class GameManager : MonoBehaviour
 
         if (nameInputPanel != null) nameInputPanel.SetActive(false);
         gameStarted = true;
-        Time.timeScale = 1; // 恢复时间，游戏正式开始
+        Time.timeScale = 1; // make the game start
     }
 
     public void incrementScore()
     {
         score++;
-        // 逻辑修正：先更新高分，再刷新显示，解决延迟感
+        // refresh score before display highscore to prevent lag display
         if (score > HighScore) { HighScore = score; }
         UpdateScoreDisplay();
     }
@@ -111,7 +111,6 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        // 如果名字还没输入或者游戏结束，什么都不做
         if (!gameStarted || gameOver) return; 
         // countdown
         maxTime -= Time.deltaTime;
@@ -148,10 +147,10 @@ public class GameManager : MonoBehaviour
 
         yield return new WaitForSeconds(0.4f);
 
-        // 加载下一关
+        // load next ascii level
         GoToNextLevel();
 
-        // 切换完后稍微等待一下，防止逻辑冲突
+        // wait for a few time in case the shrinking is not finished
         yield return new WaitForSeconds(0.1f);
     
         isTransitioning = false; 
@@ -160,7 +159,7 @@ public class GameManager : MonoBehaviour
     void GoToNextLevel()
     {
         int nextLevel = currentLevel + 1;
-        // 这里的路径必须和你磁盘上的真实路径完全一致
+        // ascii level txt path
         string nextPath = Application.dataPath + "/Resources/Levels/Level" + nextLevel + ".txt";
 
         if (File.Exists(nextPath))
@@ -176,9 +175,9 @@ public class GameManager : MonoBehaviour
 
         if (ASCIILevelLoader.instance != null)
         {
-            // 先更新索引
+            // update the level num
             ASCIILevelLoader.instance.CurrentLevel = currentLevel;
-            // 强制调用一次 LoadLevel，确保即便 level 号没变也重载
+            // load ascii level 
             ASCIILevelLoader.instance.LoadLevel(); 
         }
     }
@@ -199,7 +198,7 @@ public class GameManager : MonoBehaviour
     private float LoadHighScore()
     {
         string fullPath = Application.dataPath + FILE_HIGHSCORE;
-        // 如果文件存在就读，不存在就返回0
+        // raed the data if it exists
         if (File.Exists(fullPath))
         {
             float result;
@@ -217,7 +216,7 @@ public class GameManager : MonoBehaviour
         string fullPath = Application.dataPath + FILE_LEADERBOARD;
         LeaderboardData data = new LeaderboardData();
 
-        // 读取旧数据
+        // raed the old scores
         if (File.Exists(fullPath))
         {
             string json = File.ReadAllText(fullPath);
@@ -225,22 +224,22 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            // 第一次运行时创建包含 30, 20, 10 的标杆数据
+            // put default scores in the leaderboard
             data.entries.Add(new ScoreEntry { playerName = "Good", score = 30 });
             data.entries.Add(new ScoreEntry { playerName = "Average", score = 20 });
             data.entries.Add(new ScoreEntry { playerName = "Bad", score = 10 });
         }
 
-        // 把当前玩家的名字和分数加进去
+        // put player scores in leaderboard
         data.entries.Add(new ScoreEntry { playerName = pName, score = pScore });
-        // 重新排序（按 score 字段从大到小）
+        // put scores in order
         data.entries = data.entries.OrderByDescending(s => s.score).ToList();
-        // 只保留前10个数据 
+        // save only the first 10 scores
         data.entries = data.entries.Take(10).ToList(); 
-        // 保存
+        // save scores to Json
         string newJson = JsonUtility.ToJson(data, true);
         File.WriteAllText(fullPath, newJson);
-        // 刷新显示
+        // refresh and display
         DisplayLeaderboard();
     }
 
@@ -256,13 +255,13 @@ public class GameManager : MonoBehaviour
 
             string displayStr = "\n";
 
-            // 遍历整个记录列表
+            // go through the whole leaderboard data
             for (int i = 0; i < data.entries.Count; i++)
             {
                 ScoreEntry entry = data.entries[i];
                 string line = "";
 
-                // 根据数值分配显示格式
+                // display default scores in certain way
                 if (entry.playerName == "Good" && entry.score == 30)
                 {
                     line += "Good: 30";

@@ -9,9 +9,8 @@ public class WASD : MonoBehaviour
     
     private Rigidbody rb;
     private float ballRadius;    
-    // 转向平滑度（数值越高，变向越快）
     public float acceleration = 10f;
-    // 加速相关变量
+    // variables that controls speed boost and speed down
     public float boostMultiplier = 2f; 
     public float lossMultiplier = 0.5f;   
     public float boostDuration = 3f;      
@@ -20,10 +19,10 @@ public class WASD : MonoBehaviour
     private bool isBoosting = false;
     private bool isSlowing = false;
     
-    public Key keyUp = Key.W;     // 前
-    public Key keyDown = Key.S;   // 后
-    public Key keyLeft = Key.A;   // 左
-    public Key keyRight = Key.D;  // 右
+    public Key keyUp = Key.W;     
+    public Key keyDown = Key.S;   
+    public Key keyLeft = Key.A;   
+    public Key keyRight = Key.D;  
 
     Keyboard keyboard = Keyboard.current;//get the keyboard input for this device
 
@@ -31,7 +30,7 @@ public class WASD : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
         originalMaxVelocity = maxVelocity;
-        // 自动获取半径，用于滚动表现
+        // get the radius and apply correct rolling
         SphereCollider sc = GetComponent<SphereCollider>();
         ballRadius = (sc != null) ? sc.radius * transform.localScale.y : 0.5f;
     }
@@ -40,17 +39,18 @@ public class WASD : MonoBehaviour
     {
         Keyboard keyboard = Keyboard.current;
         if (keyboard == null) return;
-        // 获取输入向量
+        // get the input vectoe
         Vector3 moveInput = Vector3.zero;
         if (keyboard[keyUp].isPressed) moveInput += Vector3.forward;
         if (keyboard[keyDown].isPressed) moveInput += Vector3.back;
         if (keyboard[keyLeft].isPressed) moveInput += Vector3.left;
         if (keyboard[keyRight].isPressed) moveInput += Vector3.right;
         moveInput = moveInput.normalized;
-        // 直接计算并赋予目标速度
+        // give a velocity to this vector
         Vector3 targetVelocity = moveInput * maxVelocity;
         rb.linearVelocity = new Vector3(targetVelocity.x, rb.linearVelocity.y, targetVelocity.z);
-        // 处理滚动动画
+        // make the ball rolls naturally
+        // (the planets were able to be attached to player but we deleted this factor anyways)
         ApplyNaturalRolling();
     }
 
@@ -72,68 +72,68 @@ public class WASD : MonoBehaviour
     {
         if (other.CompareTag("point"))
         {
-            // 立即修改标签，防止在缩小过程中被重复触发
+            // change tag after trigger to prevent multiple trigger
             other.gameObject.tag = "Untagged";
-            // 禁用 Collider，防止在缩小过程中继续发生物理碰撞
+            // disable collider too to prevent multiple trigger
             other.enabled = false;
-            // (如有)播放声音
+            // play audio when trigger happens
             AudioSource audio = other.GetComponent<AudioSource>();
             if (audio != null)
             {
                 audio.Play();
             }
-            // 加分
+            // get score
             if (GameManager.instance != null)
             {
                 GameManager.instance.incrementScore();
             }
-            // 开启“慢慢缩小”的协程
+            // start shrinking process
             StartCoroutine(ShrinkAndDisable(other.gameObject));
         }
         if (other.CompareTag("speed"))
         {
-            // 立即修改标签，防止在缩小过程中被重复触发
+            // change tag after trigger to prevent multiple trigger
             other.gameObject.tag = "Untagged";
-            // 禁用 Collider，防止在缩小过程中继续发生物理碰撞
+            // disable collider too to prevent multiple trigger
             other.enabled = false;
-            // 加速逻辑
+            // speed boost logic
             StartCoroutine(SpeedBoost());
-            // (如有)播放声音
+            // play audio when trigger happens
             AudioSource audio = other.GetComponent<AudioSource>();
             if (audio != null)
             {
                 audio.Play();
             }
-            // 开启“慢慢缩小”的协程
+            // start shrinking process
             StartCoroutine(ShrinkAndDisable(other.gameObject));
         }
 
         if (other.CompareTag("enemy"))
         {
-            // 立即修改标签，防止在缩小过程中被重复触发
+            // change tag after trigger to prevent multiple trigger
             other.gameObject.tag = "Untagged";
-            // 禁用 Collider，防止在缩小过程中继续发生物理碰撞
+            // disable collider too to prevent multiple trigger
             other.enabled = false;
-            // 减速
+            // speed down logic
             StartCoroutine(SpeedLoss());
-            // (如有)播放声音
+            // play audio when trigger happens
             AudioSource audio = other.GetComponent<AudioSource>();
             if (audio != null)
             {
                 audio.Play();
             }
-            // 减分
+            // minus scores
             if (GameManager.instance != null)
             {
                 GameManager.instance.decrementScore();
             }
-            // 开启“慢慢缩小”的协程
+            // start shrinking process
             StartCoroutine(ShrinkAndDisable(other.gameObject));
         }
     }
     private System.Collections.IEnumerator SpeedBoost()
     {
-        if (isBoosting) yield break; // 防止重复叠加
+        if (isBoosting) yield break; // avoid multiple speed boost
 
         isBoosting = true;
         maxVelocity = originalMaxVelocity * boostMultiplier; 
@@ -145,7 +145,7 @@ public class WASD : MonoBehaviour
     }
     private System.Collections.IEnumerator SpeedLoss()
     {
-        if (isSlowing) yield break; // 防止重复叠加
+        if (isSlowing) yield break; // avoid multiple speed down
 
         isSlowing = true;
         maxVelocity = originalMaxVelocity * lossMultiplier; 
@@ -160,9 +160,9 @@ public class WASD : MonoBehaviour
         float duration = 0.3f; 
         float currentTime = 0f;
     
-        // 安全检查：如果开始时物体就没了，直接退出
+        // check if the object exist at first 安全检查：如果开始时物体就没了，直接退出
         if (target == null) yield break;
-
+        // shrink transform
         Vector3 startScale = target.transform.localScale;
         Vector3 endScale = Vector3.zero;
 
@@ -170,15 +170,15 @@ public class WASD : MonoBehaviour
         {
             currentTime += Time.deltaTime;
 
-            // 【关键修复】：每一帧操作前都检查物体是否还活着
+            // check if the object exist through time
             if (target == null) yield break; 
-
+            // if so do the actual shrink process
             target.transform.localScale = Vector3.Lerp(startScale, endScale, currentTime / duration);
     
             yield return null; 
         }
 
-        // 最后检查一次
+        // final check, and set false after the shrinking
         if (target != null)
         {
             target.SetActive(false);
