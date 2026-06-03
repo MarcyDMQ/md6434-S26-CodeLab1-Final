@@ -1,5 +1,3 @@
-# FILL IN INFO ABOUT YOUR GAME HERE. 
-
-DO NOT LEAVE IT LIKE THIS!!!
-
-Please? Please, give me content. I'm begging you. It's not that hard. Thanks.
+You are a blackhole who wants to graduate. 
+Try not to eat baby blackholes and get lightnings to boost.
+Good luck on your Blackhole graduate exam
